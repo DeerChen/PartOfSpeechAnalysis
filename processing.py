@@ -2,6 +2,7 @@
 @Author: Senkita
 '''
 
+import re
 import json
 import time
 import pandas as pd
@@ -13,11 +14,27 @@ pd.set_option('mode.chained_assignment', None)
 class Processing:
     def __init__(self, file_path, config_file):
         with open(file_path, 'r', encoding='utf-8-sig') as f:
-            self.text = f.read()
+            self.text = ''.join(list(filter(self.cn_condition, f.read())))
         self.doc = TextBlob(self.text)
 
         with open(config_file, 'r', encoding='utf-8-sig') as f:
             self.part_of_speech = json.loads(f.read())
+
+    # 双字节字符判断
+    @staticmethod
+    def cn_condition(string):
+        cn_pattern = re.compile(r'[\x00-\xff]')
+        cn_match = re.findall(cn_pattern, string)
+        
+        return len(cn_match) != 0
+    
+    # 专有判断
+    @staticmethod
+    def proper_condition(string):
+        proper_pattern = re.compile(r'^专有')
+        proper_match = re.findall(proper_pattern, string)
+        
+        return len(proper_match) != 0
 
     # 词性标注
     def analysis(self):
@@ -27,10 +44,15 @@ class Processing:
 
         for i in self.doc.tags:
             translation = self.part_of_speech[i[1]]
-            if result[translation].get(i[0]) != None:
-                result[translation][i[0]] += 1
+            if self.proper_condition(translation):
+                word = i[0]
             else:
-                result[translation][i[0]] = 1
+                word = i[0].lower()
+
+            if result[translation].get(word) != None:
+                result[translation][word] += 1
+            else:
+                result[translation][word] = 1
 
         return result
 

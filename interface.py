@@ -9,11 +9,14 @@ class Interface:
     # 完成
     def finish(self, name):
         layout = [
-            [sg.T('文件名为：{}'.format(name))],
+            [sg.T('文件名：{}'.format(name))],
             [sg.OK('确定')]
         ]
+
         window = sg.Window('完成', layout)
+
         event = window.Read()
+        
         if event[0] in (None, '确定'):
             window.Close()
 
